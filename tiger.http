@@ -1,0 +1,58 @@
+### GET request to example server
+#GET https://postback-sms.com/api/getNumber
+#  "rent_time": 4
+
+@api = https://postback-sms.com/api
+@token = 5994c91001f57eea808aff11738d752a
+@country = se
+@service = ds
+
+
+### Получить номер телефона (по региону и сервису)
+GET {{api}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "action": "getNumber",
+  "country": "{{country}}",
+  "service": "{{service}}",
+  "token": "{{token}}"
+}
+
+
+### Получить SMS для номера телефона (по activation id)
+GET {{api}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "action": "getSms",
+  "token": "{{token}}",
+  "activation": "19697513"
+}
+
+
+### Отменить номер (по activation id)
+GET {{api}}
+Content-Type: application/json
+Accept: application/json
+
+{
+    "action": "cancelNumber",
+    "token": "{{token}}",
+    "activation": "19697513"
+}
+
+### Получить статус активации (по activation id)
+GET {{api}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "action": "getStatus",
+  "token": "{{token}}",
+  "activation": "19697513"
+}
+
+
