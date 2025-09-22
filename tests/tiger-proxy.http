@@ -1,0 +1,18 @@
+##
+@api = http://127.0.0.1:8000/api/
+@token = 5994c91001f57eea808aff11738d752a
+#@country = se
+@country =  bg
+#@service = ds
+@service = pm
+
+
+### Получить номер телефона (по региону и сервису)
+GET {{api}}getNumber?country={{country}}&service={{service}}&token={{token}}
+Content-Type: application/json
+
+###
+GET {{api}}getNumber?country=se&service=00
+
+###
+GET {{api}}getNumber?country=00&service=ds
