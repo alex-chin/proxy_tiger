@@ -37,8 +37,8 @@
 - CORS: `App\Http\Middleware\CorsMiddleware`
   - Устанавливает заголовки `Access-Control-Allow-*` для простых кросс-доменных запросов.
 
-### Принятые решения (ADR кратко)
-- «Тонкий контроллер, толстый сервис»: вся интеграционная логика в сервисе, контроллер только валидирует и маршрутизирует.
+### Принятые решения
+- Тонкий контроллер, толстый сервис»: вся интеграционная логика в сервисе, контроллер только валидирует и маршрутизирует.
 - Whitelist-валидация кодов страны/сервиса: защита от некорректных значений и ранняя ошибка 422.
 - Централизованное логирование запрос/ответ/статус: упрощает диагностику при сбоях у внешнего провайдера.
 - Кастомное исключение: единообразная обработка ошибок интеграции в одном месте.
@@ -54,3 +54,36 @@
 - Добавить retry при временных ошибках внешнего API.
 - Вынести словари валидации в конфиг/фичетогглы с автоподгрузкой.
 - Поддержка POST для операций, где требуется конфиденциальность параметров.
+
+## Паттерн «Стратегия» для действий с SMS
+Контроллер делегирует выполнение доменных действий стратегиям, реализующим общий интерфейс.
+
+- **Интерфейс**: `App\Services\SmsActions\SmsActionInterface::execute(array $data)`
+- **Реализации**:
+  - `GetNumberAction` — получение номера
+  - `GetSmsAction` — получение СМС по `activation`
+  - `CancelNumberAction` — отмена номера
+  - `GetStatusAction` — проверка статуса
+
+Контроллер использует стратегии так:
+- `SmsController::respondWithJson(Request $request, array $rules, SmsActionInterface $action)` — валидирует вход и вызывает `$action->execute($data)`.
+
+### Как добавить новое действие
+1. Создайте класс в `app/Services/SmsActions/`, реализующий `SmsActionInterface`.
+2. Внедрите `TigerSmsService` через конструктор и реализуйте `execute(array $data)`.
+3. В `SmsController` создайте новый публичный метод-эндпоинт, передающий соответствующую стратегию в `respondWithJson` и добавьте правила валидации.
+
+Пример (сокращенно):
+```php
+namespace App\Services\SmsActions;
+use App\Services\TigerSmsService;
+
+class GetBalanceAction implements SmsActionInterface
+{
+    public function __construct(private TigerSmsService $smsService) {}
+    public function execute(array $data)
+    {
+        return $this->smsService->getBalance();
+    }
+}
+```

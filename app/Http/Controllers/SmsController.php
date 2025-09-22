@@ -8,6 +8,11 @@ use Illuminate\Http\Request;
 use App\Exceptions\SmsServiceException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
+use App\Services\SmsActions\SmsActionInterface;
+use App\Services\SmsActions\GetNumberAction;
+use App\Services\SmsActions\GetSmsAction;
+use App\Services\SmsActions\CancelNumberAction;
+use App\Services\SmsActions\GetStatusAction;
 
 class SmsController extends Controller
 {
@@ -20,33 +25,22 @@ class SmsController extends Controller
 
     public function getNumber(Request $request): JsonResponse
     {
-        return $this->respondWithJson($request, $this->rulesForGetNumber(), function (array $data) {
-            return $this->smsService->getNumber(
-                $data['country'] ?? null,
-                $data['service'] ?? null
-            );
-        });
+        return $this->respondWithJson($request, $this->rulesForGetNumber(), new GetNumberAction($this->smsService));
     }
 
     public function getSms(Request $request): JsonResponse
     {
-        return $this->respondWithJson($request, $this->rulesForActivation(), function (array $data) {
-            return $this->smsService->getSms($data['activation']);
-        });
+        return $this->respondWithJson($request, $this->rulesForActivation(), new GetSmsAction($this->smsService));
     }
 
     public function cancelNumber(Request $request): JsonResponse
     {
-        return $this->respondWithJson($request, $this->rulesForActivation(), function (array $data) {
-            return $this->smsService->cancelNumber($data['activation']);
-        });
+        return $this->respondWithJson($request, $this->rulesForActivation(), new CancelNumberAction($this->smsService));
     }
 
     public function getStatus(Request $request): JsonResponse
     {
-        return $this->respondWithJson($request, $this->rulesForActivation(), function (array $data) {
-            return $this->smsService->getStatus($data['activation']);
-        });
+        return $this->respondWithJson($request, $this->rulesForActivation(), new GetStatusAction($this->smsService));
     }
 
     private function rulesForGetNumber(): array
@@ -70,11 +64,11 @@ class SmsController extends Controller
         ];
     }
 
-    private function respondWithJson(Request $request, array $rules, callable $action): JsonResponse
+    private function respondWithJson(Request $request, array $rules, SmsActionInterface $action): JsonResponse
     {
         try {
             $data = $request->validate($rules);
-            $result = $action($data);
+            $result = $action->execute($data);
             return response()->json($result);
         } catch (ValidationException $e) {
             return response()->json([
